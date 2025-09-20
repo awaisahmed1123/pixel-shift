@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Shift | Image Converter</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+    <main class="app-container">
+        <div class="left-panel">
+            <div class="header">
+                <h1 class="logo-title">Pixel Shift</h1>
+                <p class="subtitle">The Ultimate Browser-Based Image Converter</p>
+            </div>
+
+            <div class="upload-area">
+                <label for="upload-input" class="upload-label">
+                    <div class="upload-content">
+                        <span>Drag & Drop or Click to Upload</span>
+                    </div>
+                </label>
+                <input type="file" id="upload-input" hidden accept="image/*" multiple>
+            </div>
+
+            <div class="guide">
+                <h2>About This Tool</h2>
+                <p>Pixel Shift is a powerful, 100% private image converter that runs directly in your browser. Your images are never uploaded to any server. You can select up to 50 images at a time, and all converted images are downloaded in a single ZIP file.</p>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="preview-area">
+                <div class="preview-header">
+                    <h2>Selected Images</h2>
+                    <div class="header-actions">
+                        <span id="file-count">0 files</span>
+                        <button id="clear-btn" class="clear-btn" title="Clear all selected images">Clear All</button>
+                    </div>
+                </div>
+                <div id="preview-grid">
+                    <div class="preview-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <span>Your selected images will appear here</span>
+                    </div>
+                </div>
+            </div>
+            <div class="options-area">
+                <div class="option">
+                    <label>Convert To</label>
+                    <button class="format-btn" id="format-select-btn">
+                        <span>JPG</span>
+                    </button>
+                </div>
+                <div class="option" id="quality-container">
+                    <label for="quality-slider">Quality</label>
+                    <div class="slider-wrapper">
+                        <input type="range" id="quality-slider" min="10" max="100" value="90">
+                        <span id="quality-value">90%</span>
+                    </div>
+                </div>
+                <button id="convert-btn">Convert & Download</button>
+            </div>
+        </div>
+    </main>
+    
+    <div class="modal-overlay" id="format-modal-overlay">
+        <div class="modal-content" id="format-modal-content">
+            <div class="modal-header">
+                <h2>Choose Format</h2>
+                <button class="close-modal-btn" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-options">
+                <button class="modal-option" data-format="jpeg">
+                    <strong>JPG</strong>
+                    <span>Best for photos & small size</span>
+                </button>
+                <button class="modal-option" data-format="png">
+                    <strong>PNG</strong>
+                    <span>Best for graphics & transparency</span>
+                </button>
+                <button class="modal-option" data-format="webp">
+                    <strong>WEBP</strong>
+                    <span>Best for web & modern compression</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification"></div>
+    <script src="script.js"></script>
+</body>
+</html>
