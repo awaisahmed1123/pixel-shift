@@ -3,120 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All-in-One Suite | Pixel Shift</title>
+    <title>Pixel Shift Suite</title>
+    <meta name="description" content="Process up to 500 images at once with the Pixel Shift Suite. Convert, compress, resize, add watermarks (text/logo with font options), and apply filters directly in your browser. 100% private and free.">
+    <meta name="keywords" content="image processing tool, batch image editor, online image converter, online image resizer, add watermark to photos, apply image filters, browser tool, no upload image editor">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Inter:wght@400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700&family=Roboto+Mono&family=Lobster&family=Pacifico&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/browser-image-compression/2.0.2/browser-image-compression.min.js"></script>
 </head>
 <body>
     <div class="app-container">
         <aside class="left-column">
-            <header class="column-header">
-                 <a href="../" class="logo">
-                    <img src="favicon.svg" alt="Logo">
-                    <h1>Pixel Shift</h1>
-                </a>
-            </header>
-            <section class="tool-info">
-                <h2>All-in-One Suite</h2>
-                <p>The ultimate toolkit. Convert, compress, resize, and watermark up to 50 images at once.</p>
-            </section>
-            <section class="image-management">
-                <div class="upload-area">
-                    <label for="upload-input" class="upload-label">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <span>Click or Drag & Drop</span>
-                    </label>
-                    <input type="file" id="upload-input" hidden accept="image/*" multiple>
-                </div>
-                <div class="thumbnails-header">
-                    <span id="file-count">0 files selected</span>
-                    <button id="clear-btn" class="clear-btn" disabled>Clear All</button>
-                </div>
-                <div class="thumbnails-list" id="thumbnails-list">
-                    </div>
+            <header class="column-header-main"><a href="../" class="logo"><img src="favicon.svg" alt="Logo"><h1>Pixel Shift</h1></a></header>
+            <section class="asset-manager">
+                <label for="upload-input" class="upload-btn-panel"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><span>Import Images</span></label>
+                <input type="file" id="upload-input" hidden accept="image/*" multiple>
+                <div class="asset-header"><span id="file-count">0 files selected</span><button id="clear-btn" class="clear-btn" disabled>Clear All</button></div>
+                <div class="thumbnails-list" id="thumbnails-list"></div>
             </section>
         </aside>
 
         <main class="center-column">
-            <div class="preview-canvas-wrapper" id="preview-canvas-wrapper">
+            <div class="canvas-wrapper" id="canvas-wrapper">
                 <canvas id="preview-canvas"></canvas>
                 <div class="placeholder-text" id="placeholder-text">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    <h2>Live Preview</h2>
-                    <p>Your edits will appear here</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <h2>Live Preview</h2><p>Import an image to start editing.</p>
                 </div>
             </div>
         </main>
 
         <aside class="right-column">
-             <header class="column-header">
-                <h2>Processing Tools</h2>
-            </header>
-            <section class="processing-controls">
-                <nav class="tabs-nav">
-                    <button class="tab-btn active" data-tab="convert">Convert</button>
-                    <button class="tab-btn" data-tab="resize">Resize</button>
-                    <button class="tab-btn" data-tab="watermark">Watermark</button>
+            <div class="tools-wrapper">
+                <nav class="tools-toolbar" id="tools-toolbar">
+                    <button class="toolbar-btn active" data-tool="convert" title="Convert"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M20 18v-4h-4"/><path d="M4 18v-4h4"/><path d="M16 10.1A5 5 0 0 0 7.9 6H4"/><path d="M20 13.9a5 5 0 0 0-8.1 4.1H4"/></svg></button>
+                    <button class="toolbar-btn" data-tool="compress" title="Compress"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><path d="m19 19-5-5"/><path d="m5 19 5-5"/><path d="m19 5-5 5"/><path d="m5 5 5 5"/></svg></button>
+                    <button class="toolbar-btn" data-tool="resize" title="Resize"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="m16 16-4-4 4-4"/><path d="m20 16-4-4 4-4"/></svg></button>
+                    <button class="toolbar-btn" data-tool="watermark" title="Watermark"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></button>
+                    <button class="toolbar-btn" data-tool="filters" title="Filters"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/></svg></button>
                 </nav>
-
-                <div class="tab-content active" id="convert-tab">
-                    <div class="option">
-                        <label for="format-select">Output Format</label>
-                        <select id="format-select"><option value="source">Keep Original</option><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WEBP</option></select>
-                    </div>
-                    <div class="option" id="quality-container">
-                        <label for="compress-slider">Quality (<span id="compress-value">80%</span>)</label>
-                        <input type="range" id="compress-slider" min="1" max="100" value="80">
-                    </div>
+                <div class="tool-panel-container">
+                    <div id="convert-panel" class="tool-panel active"><h3 class="panel-title">Convert Format</h3><div class="option"><label>Output Format</label><div class="format-grid" id="format-grid"><button class="format-btn active" data-value="source">Original</button><button class="format-btn" data-value="image/jpeg">JPG</button><button class="format-btn" data-value="image/png">PNG</button><button class="format-btn" data-value="image/webp">WEBP</button></div></div></div>
+                    <div id="compress-panel" class="tool-panel"><h3 class="panel-title">Compress Quality</h3><div class="option"><label for="compress-slider">Quality (<span id="compress-value">80%</span>)</label><input type="range" id="compress-slider" min="1" max="100" value="80"></div></div>
+                    <div id="resize-panel" class="tool-panel"><h3 class="panel-title">Resize</h3><div class="option"><label>Dimensions (px)</label><div class="resize-inputs-grid"><div class="option no-gap"><label>Width</label><input type="number" id="width-input" placeholder="e.g., 1920"></div><div class="option no-gap"><label>Height</label><input type="number" id="height-input" placeholder="e.g., 1080"></div></div></div></div>
+                    <div id="watermark-panel" class="tool-panel"><h3 class="panel-title">Watermark</h3><div class="option"><label>Type</label><div class="toggle-switch" id="watermark-type-toggle"><button class="toggle-btn active" data-type="text">Text</button><button class="toggle-btn" data-type="image">Logo</button></div></div><div id="text-options"><div class="watermark-text-grid"><div class="option"><label for="watermark-text">Text</label><input type="text" id="watermark-text" placeholder="Enter watermark text..."></div><div class="option"><label for="color-picker">Color</label><input type="color" id="color-picker" value="#FFFFFF"></div></div><div class="option"><label for="font-select">Font</label><select id="font-select"><option>Inter</option><option>Orbitron</option><option>Roboto Mono</option><option>Lobster</option><option>Pacifico</option></select></div></div><div id="image-options" style="display: none;"><div class="option"><label>Logo Image</label><label for="logo-upload-input" class="upload-btn-small"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M12 12v9"></path><path d="m16 16-4-4-4 4"></path></svg><span id="logo-name">Upload Logo</span></label><input type="file" id="logo-upload-input" hidden accept="image/*"></div></div><div class="option"><label>Opacity (<span id="opacity-value">50%</span>)</label><input type="range" id="opacity-slider" min="0" max="1" value="0.5" step="0.05"></div><div class="option"><label>Size (<span id="size-value">10%</span>)</label><input type="range" id="size-slider" min="1" max="100" value="10"></div><div class="option"><label>Position</label><div class="position-grid" id="position-grid"><button class="pos-btn" data-pos="top-left"></button><button class="pos-btn" data-pos="top-center"></button><button class="pos-btn" data-pos="top-right"></button><button class="pos-btn" data-pos="middle-left"></button><button class="pos-btn active" data-pos="middle-center"></button><button class="pos-btn" data-pos="middle-right"></button><button class="pos-btn" data-pos="bottom-left"></button><button class="pos-btn" data-pos="bottom-center"></button><button class="pos-btn" data-pos="bottom-right"></button></div></div></div>
+                    <div id="filters-panel" class="tool-panel"><h3 class="panel-title">Filters</h3><div class="filters-grid" id="filters-grid"><button class="filter-btn active" data-filter="original">Original</button><button class="filter-btn" data-filter="grayscale">Grayscale</button><button class="filter-btn" data-filter="sepia">Sepia</button><button class="filter-btn" data-filter="invert">Invert</button><button class="filter-btn" data-filter="vintage">Vintage</button><button class="filter-btn" data-filter="cool">Cool</button><button class="filter-btn" data-filter="warm">Warm</button><button class="filter-btn" data-filter="dramatic">Dramatic</button></div></div>
                 </div>
-
-                <div class="tab-content" id="resize-tab">
-                     <div class="option">
-                        <label>Dimensions (px)</label>
-                        <div class="inline-inputs"><input type="number" id="width-input" placeholder="Width"><span>×</span><input type="number" id="height-input" placeholder="Height"></div>
-                    </div>
-                </div>
-
-                <div class="tab-content" id="watermark-tab">
-                    <div class="option">
-                        <label>Type</label>
-                         <div class="toggle-switch"><button id="type-text-btn" class="toggle-btn active" data-type="text">Text</button><button id="type-image-btn" class="toggle-btn" data-type="image">Logo</button></div>
-                    </div>
-                    <div id="text-options">
-                        <div class="option"><input type="text" id="watermark-text" placeholder="Enter watermark text..."></div>
-                        <div class="option-row">
-                            <div class="option small"><label>Font</label><select id="font-select"><option>Inter</option><option>Orbitron</option><option>Righteous</option></select></div>
-                            <div class="option small"><label>Color</label><input type="color" id="color-picker" value="#FFFFFF"></div>
-                        </div>
-                    </div>
-                    <div id="image-options" style="display: none;">
-                        <div class="option">
-                            <button class="upload-btn small" id="logo-upload-btn">Upload Logo</button>
-                            <input type="file" id="logo-upload-input" hidden accept="image/png, image/svg+xml">
-                            <span id="logo-name">No logo selected.</span>
-                        </div>
-                    </div>
-                    <div class="option"><label>Opacity (<span id="opacity-value">50%</span>)</label><input type="range" id="opacity-slider" min="0" max="1" value="0.5" step="0.05"></div>
-                    <div class="option"><label>Size (<span id="size-value">30%</span>)</label><input type="range" id="size-slider" min="1" max="100" value="30"></div>
-                    <div class="option">
-                        <label>Position</label>
-                        <div class="position-grid" id="position-grid"><button class="pos-btn" data-pos="top-left"></button><button class="pos-btn" data-pos="top-center"></button><button class="pos-btn" data-pos="top-right"></button><button class="pos-btn" data-pos="middle-left"></button><button class="pos-btn active" data-pos="middle-center"></button><button class="pos-btn" data-pos="middle-right"></button><button class="pos-btn" data-pos="bottom-left"></button><button class="pos-btn" data-pos="bottom-center"></button><button class="pos-btn" data-pos="bottom-right"></button></div>
-                    </div>
-                </div>
-            </section>
-            <footer class="panel-footer">
-                <button id="process-btn" class="download-btn" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Process & Download
-                </button>
-            </footer>
+            </div>
+            <footer class="panel-footer"><button id="process-btn" class="download-btn" disabled><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Process & Download</button></footer>
         </aside>
     </div>
+
+    <div class="progress-modal" id="progress-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Processing Images...</h3>
+            <p id="modal-status">Initializing...</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <span id="progress-percentage">0%</span>
+            <button id="modal-close-btn" class="modal-close-btn" style="display: none;">Close</button>
+        </div>
+    </div>
+
     <div id="notification"></div>
     <script src="script.js"></script>
 </body>

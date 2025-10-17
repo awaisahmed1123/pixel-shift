@@ -1,36 +1,31 @@
 // === 1. ELEMENT SELECTORS ===
 const allElements = {
-    // Left Panel: Image Management
+    // Core Elements
     uploadInput: document.getElementById('upload-input'),
-    uploadLabel: document.querySelector('.upload-label'),
     thumbnailsList: document.getElementById('thumbnails-list'),
     fileCountSpan: document.getElementById('file-count'),
     clearBtn: document.getElementById('clear-btn'),
-    
-    // Left Panel: Processing Controls
-    tabBtns: document.querySelectorAll('.tab-btn'),
-    tabContents: document.querySelectorAll('.tab-content'),
     processBtn: document.getElementById('process-btn'),
-    
-    // -- Convert Tab
-    formatSelect: document.getElementById('format-select'),
-    qualityContainer: document.getElementById('quality-container'),
+    previewCanvas: document.getElementById('preview-canvas'),
+    placeholderText: document.getElementById('placeholder-text'),
+    notification: document.getElementById('notification'),
+
+    // Toolbar & Panels
+    toolsToolbar: document.getElementById('tools-toolbar'),
+
+    // Tool Controls
+    formatGrid: document.getElementById('format-grid'),
     compressSlider: document.getElementById('compress-slider'),
     compressValue: document.getElementById('compress-value'),
-    
-    // -- Resize Tab
     widthInput: document.getElementById('width-input'),
     heightInput: document.getElementById('height-input'),
-    
-    // -- Watermark Tab
-    typeTextBtn: document.getElementById('type-text-btn'),
-    typeImageBtn: document.getElementById('type-image-btn'),
+    filtersGrid: document.getElementById('filters-grid'),
+    watermarkTypeToggle: document.getElementById('watermark-type-toggle'),
     textOptions: document.getElementById('text-options'),
     imageOptions: document.getElementById('image-options'),
     watermarkText: document.getElementById('watermark-text'),
-    fontSelect: document.getElementById('font-select'),
     colorPicker: document.getElementById('color-picker'),
-    logoUploadBtn: document.getElementById('logo-upload-btn'),
+    fontSelect: document.getElementById('font-select'), // Added Font Select
     logoUploadInput: document.getElementById('logo-upload-input'),
     logoName: document.getElementById('logo-name'),
     opacitySlider: document.getElementById('opacity-slider'),
@@ -39,400 +34,443 @@ const allElements = {
     sizeValue: document.getElementById('size-value'),
     positionGrid: document.getElementById('position-grid'),
 
-    // Right Panel: Live Preview
-    previewCanvas: document.getElementById('preview-canvas'),
-    placeholderText: document.getElementById('placeholder-text'),
-
-    // Global Elements
-    notification: document.getElementById('notification'),
+    // Progress Modal Elements
+    progressModal: document.getElementById('progress-modal'),
+    modalTitle: document.getElementById('modal-title'),
+    modalStatus: document.getElementById('modal-status'),
+    progressBar: document.getElementById('progress-bar'),
+    progressPercentage: document.getElementById('progress-percentage'),
+    modalCloseBtn: document.getElementById('modal-close-btn'),
 };
 
 // === 2. STATE MANAGEMENT ===
-let selectedFiles = [];
-let watermarkLogo = new Image();
-let currentPreviewIndex = 0;
+let selectedFiles = [], originalImages = [], watermarkLogo = null, currentPreviewIndex = 0;
 let options = {
-    format: 'source', // Default to keep original format
-    quality: 80,
-    width: null,
-    height: null,
+    format: 'source', quality: 80, width: null, height: null, filter: 'original',
     watermark: {
-        apply: false,
-        type: 'text',
-        text: '',
-        font: 'Inter',
-        color: '#FFFFFF',
-        opacity: 0.5,
-        size: 30, // Percentage
-        position: 'middle-center',
-        logo: null
+        type: 'text', text: '', color: '#FFFFFF', font: 'Inter', // Added font state
+        opacity: 0.5, size: 10, position: 'middle-center'
     }
 };
 
-// === 3. CORE UI FUNCTIONS ===
+// === 3. UI STATE FUNCTIONS ===
+const showPreviewArea = () => { allElements.placeholderText.style.display = 'none'; allElements.previewCanvas.style.display = 'block'; };
+const hidePreviewArea = () => { allElements.placeholderText.style.display = 'flex'; allElements.previewCanvas.style.display = 'none'; const ctx = allElements.previewCanvas.getContext('2d'); ctx.clearRect(0, 0, allElements.previewCanvas.width, allElements.previewCanvas.height); };
 
-/** Notifcation dikhanay ka function */
-function showNotification(message, isError = false) {
+// === 4. CORE LOGIC ===
+const showNotification = (message, isError = false) => {
     allElements.notification.textContent = message;
-    allElements.notification.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--accent-color)';
+    allElements.notification.style.backgroundColor = isError ? 'var(--color-danger)' : 'var(--color-accent)';
     allElements.notification.classList.add('show');
     setTimeout(() => { allElements.notification.classList.remove('show'); }, 3000);
-}
+};
 
-/** Upload ki hui images ko handle karna */
-function handleFiles(files) {
+async function handleFiles(files) {
+    const wasEmpty = selectedFiles.length === 0;
     const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
     if (newFiles.length === 0) return;
-
-    if (selectedFiles.length + newFiles.length > 50) {
-        showNotification(`You can select a maximum of 50 images.`, true);
-        return;
-    }
+    if (selectedFiles.length + newFiles.length > 500) { showNotification(`Maximum 500 images allowed.`, true); return; }
+    if (wasEmpty) currentPreviewIndex = 0;
     
-    // Agar pehli dafa files add ho rahi hain, to preview pehli image ka hoga
-    if (selectedFiles.length === 0) {
-        currentPreviewIndex = 0;
-    }
+    // Show temporary loading notification
+    showNotification(`Loading ${newFiles.length} image(s)...`);
 
-    selectedFiles.push(...newFiles);
-    updateThumbnails();
-    updateOptionsAndDraw(); // To draw the preview of the first image
-}
-
-/** Left panel mein thumbnails update karna */
-function updateThumbnails() {
-    allElements.thumbnailsList.innerHTML = '';
-    
-    if (selectedFiles.length > 0) {
-        selectedFiles.forEach((file, index) => {
-            const thumb = document.createElement('div');
-            thumb.className = 'thumbnail';
-            if (index === currentPreviewIndex) {
-                thumb.classList.add('active');
-            }
-            
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            thumb.appendChild(img);
-            
-            thumb.addEventListener('click', () => {
-                currentPreviewIndex = index;
-                updateThumbnails(); // Active class update ke liye
-                updateOptionsAndDraw(); // Live preview update ke liye
+    let loadedCount = 0;
+    for (const file of newFiles) {
+        try {
+            // Using FileReader and Image object for potentially better compatibility
+            const reader = new FileReader();
+            const imgLoadPromise = new Promise((resolve, reject) => {
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
             });
-            
-            allElements.thumbnailsList.appendChild(thumb);
-        });
+
+            const img = await imgLoadPromise;
+            originalImages.push(img); // Store Image objects
+            selectedFiles.push(file);
+            loadedCount++;
+
+        } catch (error) {
+            console.error("Error loading image:", file.name, error);
+            showNotification(`Could not load file: ${file.name}`, true);
+        }
     }
     
-    allElements.fileCountSpan.textContent = `${selectedFiles.length} files selected`;
-    const hasFiles = selectedFiles.length > 0;
-    allElements.clearBtn.disabled = !hasFiles;
-    allElements.processBtn.disabled = !hasFiles;
+    if (loadedCount > 0) {
+       showNotification(`Loaded ${loadedCount} image(s) successfully.`);
+       updateThumbnails();
+       if (wasEmpty) showPreviewArea();
+       updateOptionsAndDraw();
+    } else if (newFiles.length > 0) {
+        // Handle case where some files were selected but none loaded
+        showNotification("Failed to load selected image(s).", true);
+    }
 }
 
-/** Right panel mein live preview draw karna */
-function drawLivePreview() {
-    if (selectedFiles.length === 0 || !selectedFiles[currentPreviewIndex]) {
-        allElements.previewCanvas.style.display = 'none';
-        allElements.placeholderText.style.display = 'flex';
+
+const updateThumbnails = () => {
+    allElements.thumbnailsList.innerHTML = '';
+    selectedFiles.forEach((file, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = `thumbnail ${index === currentPreviewIndex ? 'active' : ''}`;
+        const img = document.createElement('img');
+        // Use Image object directly if available, otherwise fallback to createObjectURL
+        if (originalImages[index] instanceof Image) {
+            img.src = originalImages[index].src;
+        } else {
+             img.src = URL.createObjectURL(file);
+             img.onload = () => URL.revokeObjectURL(img.src); // Revoke only if created here
+        }
+
+        thumb.appendChild(img);
+        thumb.addEventListener('click', () => { currentPreviewIndex = index; updateThumbnails(); updateOptionsAndDraw(); });
+        allElements.thumbnailsList.appendChild(thumb);
+    });
+    const fileCount = selectedFiles.length;
+    allElements.fileCountSpan.textContent = `${fileCount} file${fileCount !== 1 ? 's' : ''} selected`;
+    allElements.clearBtn.disabled = fileCount === 0;
+    allElements.processBtn.disabled = fileCount === 0;
+};
+
+
+const drawLivePreview = () => {
+    if (selectedFiles.length === 0 || !originalImages[currentPreviewIndex]) { hidePreviewArea(); return; }
+    // Ensure originalImages[currentPreviewIndex] is an Image object or similar drawable
+    const img = originalImages[currentPreviewIndex];
+    if (!img || typeof img.width === 'undefined') {
+        console.error("Invalid image object for preview:", img);
+        hidePreviewArea();
         return;
     }
 
-    allElements.previewCanvas.style.display = 'block';
-    allElements.placeholderText.style.display = 'none';
-
-    const file = selectedFiles[currentPreviewIndex];
     const ctx = allElements.previewCanvas.getContext('2d');
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
+    allElements.previewCanvas.width = img.naturalWidth || img.width; // Use naturalWidth if available
+    allElements.previewCanvas.height = img.naturalHeight || img.height;
 
-    img.onload = () => {
-        // Canvas ko image ke original size par set karein
-        allElements.previewCanvas.width = img.naturalWidth;
-        allElements.previewCanvas.height = img.naturalHeight;
-        
-        // Pehle image draw karein
-        ctx.drawImage(img, 0, 0);
-        
-        // Watermark apply karein agar zaroori hai
-        if (options.watermark.apply) {
-            applyWatermark(ctx, allElements.previewCanvas.width, allElements.previewCanvas.height);
-        }
-    };
-}
+    ctx.clearRect(0, 0, allElements.previewCanvas.width, allElements.previewCanvas.height); // Clear previous drawings
 
-/** Canvas par watermark apply karne ka logic */
-function applyWatermark(ctx, canvasWidth, canvasHeight) {
-    ctx.globalAlpha = options.watermark.opacity;
-    const margin = canvasWidth * 0.02; // 2% margin
-    let posX, posY;
-
-    if (options.watermark.type === 'text' && options.watermark.text) {
-        const fontSize = (canvasWidth / 100) * (options.watermark.size / 5);
-        ctx.font = `bold ${fontSize}px ${options.watermark.font}`;
-        ctx.fillStyle = options.watermark.color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const textMetrics = ctx.measureText(options.watermark.text);
-        
-        // Position calculations
-        if (options.watermark.position.includes('left')) posX = textMetrics.width / 2 + margin;
-        else if (options.watermark.position.includes('right')) posX = canvasWidth - textMetrics.width / 2 - margin;
-        else posX = canvasWidth / 2;
-
-        if (options.watermark.position.includes('top')) posY = fontSize / 2 + margin;
-        else if (options.watermark.position.includes('bottom')) posY = canvasHeight - fontSize / 2 - margin;
-        else posY = canvasHeight / 2;
-
-        ctx.fillText(options.watermark.text, posX, posY);
-
-    } else if (options.watermark.type === 'image' && options.watermark.logo && options.watermark.logo.complete) {
-        const logoBaseWidth = canvasWidth * (options.watermark.size / 100);
-        const logoAspectRatio = options.watermark.logo.naturalHeight / options.watermark.logo.naturalWidth;
-        const logoWidth = logoBaseWidth;
-        const logoHeight = logoBaseWidth * logoAspectRatio;
-
-        // Position calculations
-        if (options.watermark.position.includes('left')) posX = margin;
-        else if (options.watermark.position.includes('right')) posX = canvasWidth - logoWidth - margin;
-        else posX = (canvasWidth - logoWidth) / 2;
-
-        if (options.watermark.position.includes('top')) posY = margin;
-        else if (options.watermark.position.includes('bottom')) posY = canvasHeight - logoHeight - margin;
-        else posY = (canvasHeight - logoHeight) / 2;
-
-        ctx.drawImage(options.watermark.logo, posX, posY, logoWidth, logoHeight);
+    let filterString = 'none';
+    switch(options.filter) {
+        case 'grayscale': filterString = 'grayscale(1)'; break; case 'sepia': filterString = 'sepia(1)'; break;
+        case 'invert': filterString = 'invert(1)'; break; case 'vintage': filterString = 'sepia(0.5) contrast(1.2) brightness(0.9)'; break;
+        case 'cool': filterString = 'contrast(1.1) brightness(1.05)'; break; case 'warm': filterString = 'sepia(0.3) saturate(1.2)'; break;
+        case 'dramatic': filterString = 'contrast(1.4) saturate(1.3)'; break;
     }
-}
+    ctx.filter = filterString;
+    ctx.drawImage(img, 0, 0, allElements.previewCanvas.width, allElements.previewCanvas.height);
+    ctx.filter = 'none';
+    drawWatermark(ctx, allElements.previewCanvas.width, allElements.previewCanvas.height);
+};
 
-// === 4. OPTIONS & EVENT HANDLING ===
 
-/** User ke inputs se 'options' object update karna aur preview refresh karna */
-function updateOptionsAndDraw() {
-    // Convert & Compress
-    options.format = allElements.formatSelect.value;
+const drawWatermark = (ctx, canvasWidth, canvasHeight) => {
+    const wm = options.watermark;
+    if ((wm.type === 'text' && !wm.text) || (wm.type === 'image' && !watermarkLogo)) return;
+    ctx.globalAlpha = wm.opacity;
+    let x, y, itemWidth, itemHeight;
+    const padding = canvasWidth * 0.02;
+
+    if (wm.type === 'text') {
+        const fontSize = Math.max(10, (canvasWidth * wm.size) / 100); // Minimum font size 10px
+        ctx.font = `600 ${fontSize}px "${wm.font}", sans-serif`; // Apply selected font
+        ctx.fillStyle = wm.color;
+        ctx.textAlign = 'left'; // Reset alignment
+        ctx.textBaseline = 'bottom'; // Reset baseline
+        const textMetrics = ctx.measureText(wm.text);
+        itemWidth = textMetrics.width;
+        // Approximation for text height based on font size
+        itemHeight = fontSize * 1.2;
+    } else { // image
+        const ratio = watermarkLogo.naturalWidth / watermarkLogo.naturalHeight;
+        itemWidth = (canvasWidth * wm.size) / 100;
+        itemHeight = itemWidth / ratio;
+    }
+
+    const pos = wm.position.split('-');
+
+    // Calculate position based on item dimensions
+    if (pos[0] === 'top') {
+        y = padding + itemHeight;
+        ctx.textBaseline = 'top';
+    } else if (pos[0] === 'middle') {
+        y = canvasHeight / 2 + itemHeight / 3; // Adjusted for better vertical centering
+         ctx.textBaseline = 'middle';
+    } else { // bottom
+        y = canvasHeight - padding;
+        ctx.textBaseline = 'bottom';
+    }
+
+    if (pos[1] === 'left') {
+        x = padding;
+         ctx.textAlign = 'left';
+    } else if (pos[1] === 'center') {
+        x = (canvasWidth - itemWidth) / 2;
+         ctx.textAlign = 'center';
+         // Adjust x for canvas text drawing when centered
+         if (wm.type === 'text') x = canvasWidth / 2;
+    } else { // right
+        x = canvasWidth - itemWidth - padding;
+         ctx.textAlign = 'right';
+         // Adjust x for canvas text drawing when right-aligned
+         if (wm.type === 'text') x = canvasWidth - padding;
+    }
+
+    if (wm.type === 'text') {
+        ctx.fillText(wm.text, x, y);
+    } else {
+        ctx.drawImage(watermarkLogo, x, y - itemHeight, itemWidth, itemHeight); // y adjusted for image drawing origin
+    }
+    ctx.globalAlpha = 1.0;
+};
+
+
+const updateOptionsAndDraw = () => {
+    options.format = allElements.formatGrid.querySelector('.active').dataset.value;
     options.quality = parseInt(allElements.compressSlider.value);
-    allElements.qualityContainer.style.display = (options.format === 'image/jpeg' || options.format === 'image/webp') ? 'flex' : 'none';
-
-    // Resize
     options.width = allElements.widthInput.value ? parseInt(allElements.widthInput.value) : null;
     options.height = allElements.heightInput.value ? parseInt(allElements.heightInput.value) : null;
-
-    // Watermark
-    options.watermark.type = allElements.typeTextBtn.classList.contains('active') ? 'text' : 'image';
+    options.filter = allElements.filtersGrid.querySelector('.active').dataset.filter;
     options.watermark.text = allElements.watermarkText.value;
-    options.watermark.font = allElements.fontSelect.value;
     options.watermark.color = allElements.colorPicker.value;
+    options.watermark.font = allElements.fontSelect.value; // Get selected font
     options.watermark.opacity = parseFloat(allElements.opacitySlider.value);
     options.watermark.size = parseInt(allElements.sizeSlider.value);
-    const activePosBtn = allElements.positionGrid.querySelector('.active');
-    if (activePosBtn) {
-        options.watermark.position = activePosBtn.dataset.pos;
-    }
-    
-    // Check if watermark should be applied
-    const isTextWatermark = options.watermark.type === 'text' && options.watermark.text.trim() !== '';
-    const isImageWatermark = options.watermark.type === 'image' && options.watermark.logo;
-    options.watermark.apply = isTextWatermark || isImageWatermark;
-
+    options.watermark.position = allElements.positionGrid.querySelector('.active').dataset.pos;
     drawLivePreview();
-}
+};
 
-/** Sab event listeners ko setup karna */
-function initializeEventListeners() {
-    // File Upload
-    allElements.uploadInput.addEventListener('change', (e) => handleFiles(e.target.files));
-    allElements.uploadLabel.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
-    allElements.uploadLabel.addEventListener('dragleave', (e) => e.currentTarget.classList.remove('dragover'));
-    allElements.uploadLabel.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+// --- DOWNLOAD LOGIC ---
+async function processImagesAndDownload() {
+    if (selectedFiles.length === 0) return;
 
-    // Clear All Button
-    allElements.clearBtn.addEventListener('click', () => {
-        selectedFiles = [];
-        currentPreviewIndex = 0;
-        allElements.uploadInput.value = ''; // Reset file input
-        updateThumbnails();
-        updateOptionsAndDraw();
-    });
+    // Show Modal
+    allElements.modalTitle.textContent = `Processing ${selectedFiles.length} Images...`;
+    allElements.modalStatus.textContent = 'Initializing...';
+    allElements.progressBar.style.width = '0%';
+    allElements.progressPercentage.textContent = '0%';
+    allElements.modalCloseBtn.style.display = 'none';
+    allElements.progressModal.classList.add('show');
 
-    // Tab Switching
-    allElements.tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            allElements.tabBtns.forEach(b => b.classList.remove('active'));
-            allElements.tabContents.forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
-        });
-    });
-
-    // Option Inputs
-    const inputsToTrack = [
-        allElements.formatSelect, allElements.compressSlider, allElements.widthInput,
-        allElements.heightInput, allElements.watermarkText, allElements.fontSelect,
-        allElements.colorPicker, allElements.opacitySlider, allElements.sizeSlider
-    ];
-    inputsToTrack.forEach(input => input.addEventListener('input', updateOptionsAndDraw));
-    
-    // Sliders ke value text update karna
-    allElements.compressSlider.addEventListener('input', (e) => allElements.compressValue.textContent = `${e.target.value}%`);
-    allElements.opacitySlider.addEventListener('input', (e) => allElements.opacityValue.textContent = `${Math.round(e.target.value * 100)}%`);
-    allElements.sizeSlider.addEventListener('input', (e) => allElements.sizeValue.textContent = `${e.target.value}%`);
-    
-    // Watermark Type Toggle
-    allElements.typeTextBtn.addEventListener('click', () => {
-        allElements.typeTextBtn.classList.add('active');
-        allElements.typeImageBtn.classList.remove('active');
-        allElements.textOptions.style.display = 'block';
-        allElements.imageOptions.style.display = 'none';
-        updateOptionsAndDraw();
-    });
-    allElements.typeImageBtn.addEventListener('click', () => {
-        allElements.typeImageBtn.classList.add('active');
-        allElements.typeTextBtn.classList.remove('active');
-        allElements.imageOptions.style.display = 'block';
-        allElements.textOptions.style.display = 'none';
-        updateOptionsAndDraw();
-    });
-
-    // Watermark Logo Upload
-    allElements.logoUploadBtn.addEventListener('click', () => allElements.logoUploadInput.click());
-    allElements.logoUploadInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            watermarkLogo = new Image();
-            watermarkLogo.src = URL.createObjectURL(file);
-            watermarkLogo.onload = () => {
-                options.watermark.logo = watermarkLogo;
-                allElements.logoName.textContent = file.name;
-                updateOptionsAndDraw();
-            };
-        }
-    });
-
-    // Watermark Position Grid
-    allElements.positionGrid.addEventListener('click', (e) => {
-        if (e.target.classList.contains('pos-btn')) {
-            allElements.positionGrid.querySelector('.active').classList.remove('active');
-            e.target.classList.add('active');
-            updateOptionsAndDraw();
-        }
-    });
-    
-    // Main Process Button
-    allElements.processBtn.addEventListener('click', processAndDownload);
-}
-
-// === 5. FILE PROCESSING & DOWNLOADING ===
-
-async function processAndDownload() {
-    if (selectedFiles.length === 0) {
-        showNotification('Please select some images first.', true);
-        return;
-    }
-
-    allElements.processBtn.disabled = true;
-    const originalBtnHTML = allElements.processBtn.innerHTML;
     const zip = new JSZip();
-    let completed = 0;
+    const processingOptions = { ...options }; // Copy current options
 
     try {
-        for (const file of selectedFiles) {
-            allElements.processBtn.innerHTML = `<span>Processing ${++completed}/${selectedFiles.length}...</span>`;
-            const result = await processFile(file);
-            zip.file(result.name, result.data, { base64: true });
+        for (let i = 0; i < originalImages.length; i++) {
+            const img = originalImages[i];
+            const file = selectedFiles[i];
+            const originalFilename = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+
+            allElements.modalStatus.textContent = `Processing image ${i + 1} of ${selectedFiles.length}: ${file.name}`;
+
+            const offscreenCanvas = document.createElement('canvas');
+            const ctx = offscreenCanvas.getContext('2d');
+
+            // --- Apply Resizing ---
+            let targetWidth = img.naturalWidth || img.width;
+            let targetHeight = img.naturalHeight || img.height;
+            if (processingOptions.width || processingOptions.height) {
+                 if (processingOptions.width && processingOptions.height) {
+                    targetWidth = processingOptions.width;
+                    targetHeight = processingOptions.height;
+                 } else if (processingOptions.width) {
+                    targetHeight = (img.naturalHeight || img.height) * (processingOptions.width / (img.naturalWidth || img.width));
+                    targetWidth = processingOptions.width;
+                 } else { // Only height is set
+                    targetWidth = (img.naturalWidth || img.width) * (processingOptions.height / (img.naturalHeight || img.height));
+                    targetHeight = processingOptions.height;
+                 }
+            }
+            offscreenCanvas.width = Math.round(targetWidth);
+            offscreenCanvas.height = Math.round(targetHeight);
+
+
+            // --- Apply Filters ---
+            let filterString = 'none';
+             switch(processingOptions.filter) {
+                case 'grayscale': filterString = 'grayscale(1)'; break; case 'sepia': filterString = 'sepia(1)'; break;
+                case 'invert': filterString = 'invert(1)'; break; case 'vintage': filterString = 'sepia(0.5) contrast(1.2) brightness(0.9)'; break;
+                case 'cool': filterString = 'contrast(1.1) brightness(1.05)'; break; case 'warm': filterString = 'sepia(0.3) saturate(1.2)'; break;
+                case 'dramatic': filterString = 'contrast(1.4) saturate(1.3)'; break;
+             }
+            ctx.filter = filterString;
+
+            // Draw (potentially resized) image
+            ctx.drawImage(img, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+            ctx.filter = 'none'; // Reset filter
+
+            // --- Apply Watermark ---
+            drawWatermark(ctx, offscreenCanvas.width, offscreenCanvas.height); // Use current options for watermark
+
+            // --- Determine Output Format and Compression ---
+            let outputFormat = processingOptions.format === 'source' ? file.type : processingOptions.format;
+            // Fallback for non-standard source types
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(outputFormat)) {
+                 outputFormat = 'image/png'; // Default to PNG
+            }
+            let outputQuality = processingOptions.quality / 100; // Convert to 0-1 range
+            let outputFilename = originalFilename;
+            let outputExtension = outputFormat.split('/')[1];
+
+            let blob;
+
+            // Use browser-image-compression for JPG/WEBP quality control
+             if (outputFormat === 'image/jpeg' || outputFormat === 'image/webp') {
+                 try {
+                     const tempBlob = await new Promise(resolve => offscreenCanvas.toBlob(resolve, outputFormat, 1.0)); // Get full quality first
+                     blob = await imageCompression(new File([tempBlob], file.name, {type: outputFormat}), {
+                         maxSizeMB: undefined, // No size limit
+                         maxWidthOrHeight: Math.max(offscreenCanvas.width, offscreenCanvas.height), // Keep original dimensions
+                         useWebWorker: true,
+                         initialQuality: outputQuality,
+                         fileType: outputFormat
+                     });
+                     outputExtension = blob.type.split('/')[1]; // Update extension based on compressed blob type if needed
+                 } catch (compressionError) {
+                      console.error("Compression failed for", file.name, ":", compressionError);
+                      // Fallback to canvas toBlob without compression library quality
+                      blob = await new Promise(resolve => offscreenCanvas.toBlob(resolve, outputFormat, outputQuality));
+                 }
+             } else { // For PNG or other formats
+                 blob = await new Promise(resolve => offscreenCanvas.toBlob(resolve, outputFormat));
+             }
+
+             if (blob) {
+                 outputFilename = `${originalFilename}_processed.${outputExtension}`;
+                 zip.file(outputFilename, blob);
+             } else {
+                 showNotification(`Failed to process: ${file.name}`, true);
+             }
+
+
+            // Update progress
+            const progress = Math.round(((i + 1) / selectedFiles.length) * 100);
+            allElements.progressBar.style.width = `${progress}%`;
+            allElements.progressPercentage.textContent = `${progress}%`;
+
+            // Yield to the event loop occasionally for large batches
+            if ((i + 1) % 10 === 0) {
+                 await new Promise(resolve => setTimeout(resolve, 0));
+            }
         }
 
-        allElements.processBtn.innerHTML = `<span>Zipping files...</span>`;
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        
+        // --- Generate and Download Zip ---
+        allElements.modalStatus.textContent = 'Generating ZIP file...';
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+
+        // Trigger download
         const link = document.createElement('a');
         link.href = URL.createObjectURL(zipBlob);
-        link.download = 'PixelShift_Suite_Images.zip';
+        link.download = 'pixelshift_processed_images.zip';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
 
-        showNotification('Success! Your images have been downloaded.');
+        // Update Modal for Completion
+        allElements.modalTitle.textContent = 'Processing Complete!';
+        allElements.modalStatus.textContent = 'Your images have been processed and downloaded. Thank You!';
+        allElements.modalCloseBtn.style.display = 'block';
 
     } catch (error) {
-        console.error('Processing Error:', error);
-        showNotification('An error occurred during processing.', true);
-    } finally {
-        allElements.processBtn.disabled = false;
-        allElements.processBtn.innerHTML = originalBtnHTML;
+        console.error("Error during processing:", error);
+        allElements.modalTitle.textContent = 'Error!';
+        allElements.modalStatus.textContent = `An error occurred during processing: ${error.message}. Please try again.`;
+        allElements.progressBar.style.backgroundColor = 'var(--color-danger)'; // Show error in progress bar
+        allElements.modalCloseBtn.style.display = 'block';
     }
 }
 
-function processFile(file) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onerror = reject;
-        img.onload = async () => {
-            let processedFile = file;
-            const originalType = file.type;
-            const targetFormat = options.format === 'source' ? originalType : options.format;
-            const needsCompression = (targetFormat === 'image/jpeg' || targetFormat === 'image/webp') && options.quality < 100;
-            
-            // Step 1: Compress if needed (using library for better quality)
-            if (needsCompression) {
-                try {
-                    processedFile = await imageCompression(file, {
-                        maxSizeMB: 20, // High limit
-                        useWebWorker: true,
-                        quality: options.quality / 100,
-                        fileType: targetFormat
-                    });
-                } catch (e) {
-                    console.error('Compression failed:', e);
-                    // Fallback to original file if compression fails
-                }
+
+function initializeEventListeners() {
+    allElements.uploadInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    allElements.clearBtn.addEventListener('click', () => { selectedFiles = []; originalImages = []; currentPreviewIndex = 0; watermarkLogo = null; allElements.uploadInput.value = ''; updateThumbnails(); hidePreviewArea(); });
+
+    // --- Tool Control Listeners ---
+    const inputsToTrack = [allElements.compressSlider, allElements.widthInput, allElements.heightInput, allElements.watermarkText, allElements.colorPicker, allElements.fontSelect, allElements.opacitySlider, allElements.sizeSlider];
+    inputsToTrack.forEach(input => { if (input) input.addEventListener('input', updateOptionsAndDraw); });
+
+    allElements.compressSlider.addEventListener('input', e => allElements.compressValue.textContent = `${e.target.value}%`);
+    allElements.opacitySlider.addEventListener('input', e => allElements.opacityValue.textContent = `${Math.round(e.target.value * 100)}%`);
+    allElements.sizeSlider.addEventListener('input', e => allElements.sizeValue.textContent = `${e.target.value}%`);
+
+    ['formatGrid', 'filtersGrid', 'positionGrid'].forEach(id => {
+        if (!allElements[id]) return; // Add check
+        allElements[id].addEventListener('click', e => {
+            const btnClass = id === 'formatGrid' ? 'format-btn' : (id === 'filtersGrid' ? 'filter-btn' : 'pos-btn');
+            const clickedButton = e.target.closest(`.${btnClass}`); // Use closest
+            if (clickedButton) {
+                allElements[id].querySelector('.active')?.classList.remove('active'); // Use optional chaining
+                clickedButton.classList.add('active');
+                updateOptionsAndDraw();
             }
+        });
+    });
 
-            // Step 2: Draw to canvas for resizing and watermarking
-            const tempImg = new Image();
-            tempImg.src = URL.createObjectURL(processedFile);
-            tempImg.onerror = reject;
-            tempImg.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = options.width || tempImg.naturalWidth;
-                canvas.height = options.height || tempImg.naturalHeight;
 
-                ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
-                
-                if (options.watermark.apply) {
-                    applyWatermark(ctx, canvas.width, canvas.height);
-                }
+    allElements.watermarkTypeToggle.addEventListener('click', (e) => {
+         const clickedButton = e.target.closest('.toggle-btn');
+         if (!clickedButton) return;
 
-                // Step 3: Get final image data from canvas
-                canvas.toBlob(blob => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64Data = reader.result.split(',')[1];
-                        const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
-                        const extension = targetFormat.split('/')[1];
-                        resolve({
-                            name: `${originalName}-processed.${extension}`,
-                            data: base64Data
-                        });
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                }, targetFormat, options.quality / 100);
+         const btnType = clickedButton.dataset.type;
+         options.watermark.type = btnType;
+         allElements.watermarkTypeToggle.classList.toggle('image-active', btnType === 'image');
+         allElements.watermarkTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+         clickedButton.classList.add('active');
+
+         // Use flex for display to potentially fix layout issues vs block
+         allElements.textOptions.style.display = btnType === 'text' ? 'flex' : 'none';
+         allElements.imageOptions.style.display = btnType === 'image' ? 'flex' : 'none';
+         updateOptionsAndDraw();
+    });
+
+
+    allElements.logoUploadInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = event => {
+                const img = new Image();
+                img.onload = () => { watermarkLogo = img; allElements.logoName.textContent = file.name; updateOptionsAndDraw(); };
+                img.onerror = () => showNotification("Could not load logo file.", true);
+                img.src = event.target.result;
             };
-        };
+            reader.readAsDataURL(file);
+        } else { // Reset if no file selected
+             watermarkLogo = null;
+             allElements.logoName.textContent = "Upload Logo";
+             updateOptionsAndDraw();
+        }
+    });
+
+    // Toolbar logic
+    allElements.toolsToolbar.addEventListener('click', e => {
+        const clickedBtn = e.target.closest('.toolbar-btn');
+        if (!clickedBtn) return;
+        allElements.toolsToolbar.querySelector('.active')?.classList.remove('active');
+        document.querySelector('.tool-panel.active')?.classList.remove('active');
+        const toolName = clickedBtn.dataset.tool;
+        clickedBtn.classList.add('active');
+        const targetPanel = document.getElementById(`${toolName}-panel`);
+        if (targetPanel) {
+            targetPanel.classList.add('active');
+        }
+    });
+
+    // Process Button Listener
+    allElements.processBtn.addEventListener('click', processImagesAndDownload);
+
+    // Modal Close Button Listener
+    allElements.modalCloseBtn.addEventListener('click', () => {
+        allElements.progressModal.classList.remove('show');
+        // Reset progress bar color just in case it was set to error
+        allElements.progressBar.style.backgroundColor = 'var(--color-accent)';
     });
 }
 
-
-// === 6. INITIALIZATION ===
-document.addEventListener('DOMContentLoaded', () => {
-    initializeEventListeners();
-    updateThumbnails(); // Initial UI state
-    updateOptionsAndDraw(); // Initial preview state
-});
+document.addEventListener('DOMContentLoaded', () => { initializeEventListeners(); hidePreviewArea(); });

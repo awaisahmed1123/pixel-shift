@@ -3,78 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Shift - Your Ultimate Image Toolkit</title>
-    <link rel="icon" type="image/svg+xml" href="./converter/favicon.svg">
+    <title>Pixel Shift - The Ultimate Browser-Based Image Suite</title>
+    <meta name="description" content="Pixel Shift: The ultimate free browser-based image suite. Convert, compress, resize, filter, and watermark images privately and quickly. Up to 500 images at once.">
+    <meta name="keywords" content="image editor, image converter, image resizer, image compressor, watermark tool, filter images, batch image processing, browser image editor, free image tool, client-side image processing, privacy-focused image tool">
+    <link rel="icon" type="image/svg+xml" href="./suite/favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="background-stars"></div>
+    <div class="background-effects">
+        <div class="background-grid"></div>
+        <div class="background-glow top"></div>
+        <div class="background-glow bottom"></div>
+    </div>
 
     <header class="main-header">
         <div class="header-content">
             <a href="/" class="logo">
-                <img src="./converter/favicon.svg" alt="Pixel Shift Logo">
+                <img src="./suite/favicon.svg" alt="Pixel Shift Logo">
                 <span>Pixel Shift</span>
             </a>
             <nav class="main-nav">
+                <a href="#features">Features</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
                 <a href="privacy.html">Privacy Policy</a>
             </nav>
+            <a href="./suite/" class="launch-btn-header">Launch Suite</a>
             <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle Menu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
         </div>
         <div class="mobile-menu" id="mobile-menu">
             <nav class="mobile-nav-links">
+                <a href="#features">Features</a>
                 <a href="about.html">About</a>
                 <a href="contact.html">Contact</a>
                 <a href="privacy.html">Privacy Policy</a>
+                <a href="./suite/"><strong>Launch Suite</strong></a>
             </nav>
         </div>
     </header>
 
     <main class="main-container">
         <section class="hero">
-            <h1 class="hero-title">The Ultimate Browser-Based Image Toolkit</h1>
-            <p class="subtitle">Process your images with maximum speed and 100% privacy. No uploads, no waiting. Just powerful tools, right at your fingertips.</p>
+            <h1 class="hero-title">Your Personal Image Processing Powerhouse</h1>
+            <p class="subtitle">The complete suite for professionals. Convert, compress, resize, filter, and watermark up to 500 images at once — right in your browser.</p>
+            <a href="./suite/" class="launch-btn-hero">
+                Launch The Suite
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </a>
         </section>
 
-        <section class="tools-grid">
-            <a href="./suite/" class="tool-card featured">
-                <h2>All-in-One Suite</h2>
-                <p>The ultimate toolkit. Convert, compress, resize, and watermark your images all in one place.</p>
-            </a>
-            <a href="./converter/" class="tool-card">
-                <h2>Batch Converter</h2>
-                <p>Convert up to 50 images to JPG, PNG, or WEBP and download them in a single ZIP file.</p>
-            </a>
-            <a href="./compressor/" class="tool-card">
-                <h2>Smart Compressor</h2>
-                <p>Reduce file sizes for up to 500 images with minimal quality loss. Perfect for web optimization.</p>
-            </a>
-            <a href="./resizer/" class="tool-card">
-                <h2>Quick Resizer</h2>
-                <p>Resize up to 50 images to precise pixel dimensions for social media posts or banners.</p>
-            </a>
-            <a href="./watermarker/" class="tool-card">
-                <h2>Watermark Tool</h2>
-                <p>Apply a custom text or logo watermark to protect your images before sharing.</p>
-            </a>
-            <div class="tool-card disabled">
-                <h2>GIF Maker</h2>
-                <p>Create animated GIFs from your videos or a sequence of images. Adjust speed and quality.</p>
-                <span>Coming Soon</span>
+        <section id="features" class="features-section">
+            <h2 class="section-title">All The Tools You Need. One Suite.</h2>
+            <div class="features-grid">
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 18v-4h-4"/><path d="M4 18v-4h4"/><path d="M16 10.1A5 5 0 0 0 7.9 6H4"/><path d="M20 13.9a5 5 0 0 0-8.1 4.1H4"/></svg></div><h3>Convert Formats</h3><p>Switch between JPG, PNG, and WEBP effortlessly.</p></div>
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><path d="m19 19-5-5"/><path d="m5 19 5-5"/><path d="m19 5-5 5"/><path d="m5 5 5 5"/></svg></div><h3>Compress Images</h3><p>Drastically reduce file size without losing quality.</p></div>
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="m16 16-4-4 4-4"/><path d="m20 16-4-4 4-4"/></svg></div><h3>Resize Precisely</h3><p>Set exact pixel dimensions for any requirement.</p></div>
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div><h3>Add Watermarks</h3><p>Protect your work with custom text or logo watermarks.</p></div>
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/></svg></div><h3>Apply Filters</h3><p>Enhance your images with a range of pro-level filters.</p></div>
+                <div class="feature-card"><div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 10a2 2 0 0 1-4 0"/><path d="M2.5 10a2.5 2.5 0 0 1 5 0"/><path d="M16.5 10a2.5 2.5 0 0 1 5 0"/><path d="M4.11 14.11a2 2 0 0 1 2.83 0"/><path d="M17.07 14.11a2 2 0 0 1 2.83 0"/><path d="M12 19.36a2 2 0 0 1-2.83 0"/></svg></div><h3>Batch Processing</h3><p>Process up to 500 images in a single, lightning-fast operation.</p></div>
             </div>
         </section>
-        
-        <footer class="footer">
-            <p>Built by Awais Ahmed ❤️</p>
-        </footer>
+
+        <section id="privacy" class="privacy-section">
+            <div class="privacy-content">
+                <div class="privacy-icon"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+                <div class="privacy-text">
+                    <h2 class="section-title">Your Privacy is Paramount</h2>
+                    <p class="subtitle">Pixel Shift operates 100% within your browser. Your images are never uploaded to any server. No data collection, no tracking. Just pure, secure, client-side processing.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <h2 class="section-title">Ready to Shift Your Workflow?</h2>
+            <a href="./suite/" class="launch-btn-hero">
+                Launch The Free Suite
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </a>
+        </section>
     </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Pixel Shift. All Rights Reserved.</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
